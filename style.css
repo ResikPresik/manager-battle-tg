@@ -1,0 +1,21 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--tg-theme-bg-color); /* Используем цвет фона Telegram */
+    color: var(--tg-theme-text-color); /* Используем цвет текста Telegram */
+    padding: 20px;
+    text-align: center;
+}
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+button {
+    background-color: var(--tg-theme-button-color); /* Цвет кнопки Telegram */
+    color: var(--tg-theme-button-text-color); /* Цвет текста кнопки Telegram */
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2em;
+    cursor: pointer;
+    border-radius: 8px;
+    margin-top: 20px;
+}
