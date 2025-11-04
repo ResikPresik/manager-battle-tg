@@ -3,18 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Менеджерская Битва</title>
+    <title>Менеджерская Битва: Уровень 1</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script> 
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Менеджерская Битва: Mini App</h1>
-        <p>Нажмите кнопку, чтобы начать игру.</p>
-        
-        <p id="user-info"></p>
+    <div class="header">
+        <h2 id="level-title">Уровень 1: Идея</h2>
+        <div class="score-board">
+            <span id="timer">Осталось: 10:00</span> | 
+            <span id="score">Баллы команды: 0</span>
+        </div>
+    </div>
+    
+    <div class="container" id="game-container">
+        <form id="pitch-form" style="display: block;">
+            <h3>Pitch-карта проекта</h3>
 
-        <button id="mainButton" style="display: none;">Начать Уровень 1: Идея</button>
+            <label for="name">1️⃣ НАЗВАНИЕ ПРОЕКТА:</label>
+            <input type="text" id="name" name="name" required placeholder="Например: 'Бот-помощник для студентов'">
+
+            <label for="essence">2️⃣ СУТЬ ИДЕИ (что делаем):</label>
+            <textarea id="essence" name="essence" required placeholder="Максимум 3 предложения, о чем ваш бизнес."></textarea>
+
+            <label for="wow_factor">3️⃣ WOW-ФАКТОР (чем мы уникальны):</label>
+            <textarea id="wow_factor" name="wow_factor" required placeholder="Главная фишка, которая отличает вас от конкурентов."></textarea>
+
+            <label>4️⃣ ДЛЯ КОГО (целевая аудитория):</label>
+            <div class="radio-group">
+                <input type="radio" id="aud_students" name="audience" value="Школьники/студенты" required> <label for="aud_students">Школьники/студенты</label><br>
+                <input type="radio" id="aud_young" name="audience" value="Молодые люди 20-35 лет"> <label for="aud_young">Молодые люди 20-35 лет</label><br>
+                <input type="radio" id="aud_families" name="audience" value="Семьи с детьми"> <label for="aud_families">Семьи с детьми</label><br>
+            </div>
+            
+            <label for="monetization">5️⃣ КАК ЗАРАБАТЫВАЕМ:</label>
+            <textarea id="monetization" name="monetization" required placeholder="Модель монетизации: подписка, реклама, продажа, комиссия."></textarea>
+
+            </form>
+
+        <div id="level2-view" style="display: none;">
+            <h3>Уровень 2: Запуск</h3>
+            <p>Ждем начала второго уровня...</p>
+        </div>
+
     </div>
 
     <script src="script.js"></script>
