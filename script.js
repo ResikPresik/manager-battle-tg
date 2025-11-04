@@ -1,41 +1,101 @@
-// Проверяем, что Telegram WebApp API загрузился
 if (window.Telegram && window.Telegram.WebApp) {
     const webApp = window.Telegram.WebApp;
-
-    // Включаем виброотклик при нажатии
+    webApp.ready();
     webApp.enableClosingConfirmation(); 
 
-    // Делаем главное меню видимым
-    webApp.ready();
+    const mainButton = webApp.MainButton;
+    const timerDisplay = document.getElementById('timer');
+    const pitchForm = document.getElementById('pitch-form');
+    let timeLeft = 10 * 60; // 10 минут в секундах
+    let timerInterval;
 
-    // Получаем информацию о пользователе из Telegram
-    const userInfo = webApp.initDataUnsafe.user;
+    // --- 1. ФУНКЦИИ ТАЙМЕРА ---
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        
+        timerInterval = setInterval(() => {
+            if (timeLeft > 0) {
+                timeLeft--;
+                timerDisplay.textContent = `Осталось: ${formatTime(timeLeft)}`;
+            } else {
+                clearInterval(timerInterval);
+                timerDisplay.textContent = 'ВРЕМЯ ВЫШЛО!';
+                
+                // Если время вышло, автоматически отправляем данные
+                if (mainButton.text.includes("Отправить Pitch")) {
+                     mainButton.setText("ВРЕМЯ ВЫШЛО - ОТПРАВКА");
+                     mainButton.disable();
+                     submitPitch();
+                }
+            }
+        }, 1000);
+    }
     
-    const userInfoElement = document.getElementById('user-info');
-    if (userInfo) {
-        userInfoElement.textContent = `Привет, ${userInfo.first_name}! Твой ID: ${userInfo.id}.`;
-    } else {
-        userInfoElement.textContent = `Добро пожаловать, Гость.`;
+    // --- 2. ФУНКЦИИ ОТПРАВКИ ДАННЫХ ---
+    
+    // Эмуляция отправки данных (вместо реального сервера)
+    function submitPitch() {
+        const formData = new FormData(pitchForm);
+        const data = {};
+        formData.forEach((value, key) => { data[key] = value; });
+
+        // Преобразование данных в строку для отправки боту
+        const messageText = 
+            `*ОТВЕТ УРОВНЯ 1 - PITCH-КАРТА* \n\n` +
+            `Команда/Пользователь ID: ${webApp.initDataUnsafe.user.id}\n\n` +
+            `1️⃣ Название: ${data.name}\n` +
+            `2️⃣ Суть: ${data.essence}\n` +
+            `3️⃣ WOW-Фактор: ${data.wow_factor}\n` +
+            `4️⃣ Целевая аудитория: ${data.audience}\n` +
+            `5️⃣ Монетизация: ${data.monetization}\n\n` +
+            `Таймер остановлен на: ${formatTime(timeLeft)}`;
+
+        // Отправляем данные обратно боту через webApp.sendData
+        // Это самое важное! Бот получит эту строку как сообщение.
+        webApp.sendData(messageText);
+
+        // Отключаем кнопку после отправки
+        mainButton.disable();
+        
+        // Показываем пользователю, что отправка прошла успешно
+        webApp.showAlert("Pitch-карта успешно отправлена жюри! Ждите начала Уровня 2.");
+        
+        // Скрываем форму Уровня 1 и показываем заглушку Уровня 2
+        pitchForm.style.display = 'none';
+        document.getElementById('level2-view').style.display = 'block';
     }
 
 
-    // Настраиваем Главную Кнопку (она появляется внизу экрана Telegram)
-    const mainButton = webApp.MainButton;
-    mainButton.text = "ЗАПУСТИТЬ ИГРУ";
-    mainButton.show(); // Показываем кнопку
+    // --- 3. ИНИЦИАЛИЗАЦИЯ (Запуск) ---
 
-    // Что происходит при нажатии Главной Кнопки
+    // Настраиваем Главную Кнопку Telegram
+    mainButton.text = "ОТПРАВИТЬ PITCH-КАРТУ";
+    mainButton.show();
     mainButton.onClick(function() {
-        // Здесь будет логика запуска игры, например:
-        // 1. Отправка данных на ваш сервер.
-        // 2. Смена интерфейса на форму "Уровень 1: Идея".
-
-        // Пока что просто покажем сообщение и закроем приложение
-        webApp.showAlert(`Успешно! Пользователь ${userInfo.first_name} начал игру.`);
-        // webApp.close(); // можно закрыть приложение, но пока оставим открытым
+        // Проверяем заполнение формы перед отправкой
+        if (pitchForm.checkValidity()) {
+            clearInterval(timerInterval); // Останавливаем таймер
+            submitPitch(); // Отправляем данные
+        } else {
+            // Если форма не заполнена, выводим сообщение об ошибке
+            webApp.showAlert("Пожалуйста, заполните все обязательные поля Pitch-карты.");
+            // Активируем встроенную проверку HTML5, чтобы подсветить поля
+            pitchForm.reportValidity(); 
+        }
     });
+    
+    // Запускаем таймер при открытии Mini App
+    startTimer();
 
 } else {
-    // Если мы открыли файл не в Telegram (например, в браузере)
-    document.getElementById('user-info').textContent = 'Запустите это приложение внутри Telegram.';
+    // Режим разработки в браузере
+    document.getElementById('timer').textContent = 'Осталось: 10:00 (Web Mode)';
+    document.getElementById('score').textContent = 'Баллы команды: 0 (Web Mode)';
+    alert('Запустите это приложение внутри Telegram!');
 }
