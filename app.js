@@ -816,23 +816,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Для демо: автоматически показываем главное меню
     showScreen('main-menu');
+    
+    // Делаем функции глобальными для onclick в HTML
+    window.showScreen = showScreen;
+    window.quickStartGame = quickStartGame;
+    window.changeTeams = changeTeams;
+    window.changePlayersPerTeam = changePlayersPerTeam;
+    window.changeTime = changeTime;
+    window.createGame = createGame;
+    window.startGameAsTeacher = startGameAsTeacher;
+    window.startGameAsSinglePlayer = startGameAsSinglePlayer;
+    window.joinGame = joinGame;
+    window.selectRole = selectRole;
+    window.submitIdea = submitIdea;
+    window.makeChoice = makeChoice;
+    window.closeCoinModal = closeCoinModal;
+    window.submitCrisisPlan = submitCrisisPlan;
+    window.toggleChat = toggleChat;
+    window.sendMessage = sendMessage;
+    window.shareResults = shareResults;
 });
-
-// Экспорт функций для глобального использования
-window.showScreen = showScreen;
-window.quickStartGame = quickStartGame;
-window.changeTeams = changeTeams;
-window.changePlayersPerTeam = changePlayersPerTeam;
-window.changeTime = changeTime;
-window.createGame = createGame;
-window.startGameAsTeacher = startGameAsTeacher;
-window.startGameAsSinglePlayer = startGameAsSinglePlayer;
-window.joinGame = joinGame;
-window.selectRole = selectRole;
-window.submitIdea = submitIdea;
-window.makeChoice = makeChoice;
-window.closeCoinModal = closeCoinModal;
-window.submitCrisisPlan = submitCrisisPlan;
-window.toggleChat = toggleChat;
-window.sendMessage = sendMessage;
-window.shareResults = shareResults;
