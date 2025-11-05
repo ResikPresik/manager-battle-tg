@@ -144,6 +144,7 @@ function updateTeamScore(teamId, score) {
 const state = {
     currentScreen: 'main-menu',
     gameCode: null,
+    gameId: null,
     playerName: null,
     teamId: null,
     teamName: null,
@@ -154,7 +155,8 @@ const state = {
     isTeacher: false,
     currentCard: 0,
     eventCards: [],
-    timer: null
+    timer: null,
+    teacherInterval: null
 };
 
 // ============================================
@@ -296,24 +298,125 @@ function startGameAsTeacher() {
         .then(data => {
             if (data.success) {
                 state.teams = data.game.teams;
+                state.isTeacher = true;
                 
-                // Начинаем игру на сервере
-                return fetch(`${config.API_URL}/api/game/${state.gameCode}/start`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log('Игра начата преподавателем');
+                // Инициализируем Socket.IO
+                initSocket();
+                
+                // Показываем панель преподавателя
+                showTeacherPanel();
+                
+                // Запускаем обновление данных каждые 2 секунды
+                state.teacherInterval = setInterval(() => {
+                    updateTeacherPanel();
+                }, 2000);
             }
         })
         .catch(error => {
             console.error('Ошибка:', error);
-            alert('Пока используйте "Быстрая игра" для тестирования');
+            alert('Не удалось загрузить данные игры. Проверьте подключение к серверу.');
         });
+}
+
+function showTeacherPanel() {
+    document.getElementById('teacher-game-code').textContent = state.gameCode;
+    updateTeacherPanel();
+    showScreen('teacher-panel');
+}
+
+function updateTeacherPanel() {
+    // Обновляем список команд и участников
+    fetch(`${config.API_URL}/api/game/${state.gameCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                state.teams = data.game.teams;
+                const players = data.game.players || [];
+                
+                // Обновляем список команд
+                const teamsList = document.getElementById('teacher-teams-list');
+                teamsList.innerHTML = '';
+                
+                state.teams.forEach(team => {
+                    const teamPlayers = players.filter(p => p.team_id === team.id);
+                    const teamDiv = document.createElement('div');
+                    teamDiv.style.cssText = `
+                        background: var(--bg-secondary);
+                        padding: 16px;
+                        border-radius: 12px;
+                        margin-bottom: 12px;
+                    `;
+                    teamDiv.innerHTML = `
+                        <h4 style="margin-bottom: 8px;">${team.name}</h4>
+                        <p style="font-size: 14px; opacity: 0.8;">
+                            Участников: ${teamPlayers.length} | Счёт: ${team.score}
+                        </p>
+                        ${teamPlayers.length > 0 ? `
+                            <div style="margin-top: 8px;">
+                                ${teamPlayers.map(p => `
+                                    <span style="
+                                        display: inline-block;
+                                        background: var(--primary);
+                                        padding: 4px 12px;
+                                        border-radius: 20px;
+                                        font-size: 12px;
+                                        margin: 4px;
+                                    ">${p.name} (${getRoleName(p.role).split(' - ')[0]})</span>
+                                `).join('')}
+                            </div>
+                        ` : '<p style="font-size: 12px; opacity: 0.6; margin-top: 4px;">Нет участников</p>'}
+                    `;
+                    teamsList.appendChild(teamDiv);
+                });
+                
+                // Обновляем счёт
+                const scoresDiv = document.getElementById('teacher-scores');
+                scoresDiv.innerHTML = state.teams
+                    .sort((a, b) => b.score - a.score)
+                    .map((team, index) => `
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 12px;
+                            background: var(--bg-secondary);
+                            border-radius: 12px;
+                            margin-bottom: 8px;
+                        ">
+                            <span>${index + 1}. ${team.name}</span>
+                            <span style="font-size: 20px; font-weight: 700; color: var(--accent);">
+                                ${team.score}
+                            </span>
+                        </div>
+                    `).join('');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка обновления:', error);
+        });
+}
+
+function teacherStartLevel(level) {
+    // Отправляем всем игрокам команду начать уровень
+    fetch(`${config.API_URL}/api/game/${state.gameCode}/next-level`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Уровень ${level} начат! Все участники получили уведомление.`);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Не удалось начать уровень');
+    });
+}
+
+function teacherShowResults() {
+    // Показываем результаты
+    showResults();
 }
 
 // Режим: быстрая игра для одного игрока (тестирование)
@@ -1036,4 +1139,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.toggleChat = toggleChat;
     window.sendMessage = sendMessage;
     window.shareResults = shareResults;
+    window.teacherStartLevel = teacherStartLevel;
+    window.teacherShowResults = teacherShowResults;
 });
