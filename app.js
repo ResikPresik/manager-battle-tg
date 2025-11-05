@@ -577,16 +577,28 @@ function flipCoin(points) {
     const modal = document.getElementById('coin-modal');
     modal.classList.add('active');
     
+    // Определяем результат заранее
+    const isWin = Math.random() > 0.5;
+    
     // Анимация броска
     const coin = document.getElementById('coin');
     coin.style.animation = 'none';
+    
+    // Устанавливаем правильную финальную позицию монеты
+    if (isWin) {
+        // Орёл - монета остановится на heads (0deg или 360deg)
+        coin.style.transform = 'rotateY(1440deg)'; // Чётное количество переворотов
+    } else {
+        // Решка - монета остановится на tails (180deg)
+        coin.style.transform = 'rotateY(1620deg)'; // Нечётное количество переворотов (1440 + 180)
+    }
+    
     setTimeout(() => {
         coin.style.animation = 'flipCoin 2s ease-in-out';
     }, 10);
     
-    // Результат броска
+    // Показываем результат после анимации
     setTimeout(() => {
-        const isWin = Math.random() > 0.5;
         const resultElement = document.getElementById('coin-result');
         
         if (isWin) {
@@ -598,7 +610,7 @@ function flipCoin(points) {
             resultElement.className = 'coin-result lose';
             updateScore(points.lose);
         }
-    }, 2000);
+    }, 2100);
 }
 
 function closeCoinModal() {
