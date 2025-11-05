@@ -2,52 +2,426 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Менеджерская Битва: Уровень 1</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script> 
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Менеджерская Битва</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="header">
-        <h2 id="level-title">Уровень 1: Идея</h2>
-        <div class="score-board">
-            <span id="timer">Осталось: 10:00</span> | 
-            <span id="score">Баллы команды: 0</span>
+    <!-- Главное меню -->
+    <div id="main-menu" class="screen active">
+        <div class="container">
+            <!-- Логотип и название -->
+            <div class="logo-section">
+                <div class="logo-icon">⚔️</div>
+                <h1 class="game-title">
+                    <span class="title-main">МЕНЕДЖЕРСКАЯ</span>
+                    <span class="title-sub">БИТВА</span>
+                </h1>
+                <p class="game-subtitle">Стань лучшим менеджером!</p>
+            </div>
+
+            <!-- Кнопки меню -->
+            <div class="menu-buttons">
+                <button class="btn btn-primary btn-large" onclick="quickStartGame()">
+                    ⚡ Быстрая игра
+                </button>
+                
+                <button class="btn btn-secondary btn-large" onclick="showScreen('create-game')">
+                    <span class="btn-icon">👨‍🏫</span>
+                    <span>Создать игру</span>
+                </button>
+                
+                <button class="btn btn-secondary btn-large" onclick="showScreen('join-game')">
+                    <span class="btn-icon">🎮</span>
+                    <span>Присоединиться</span>
+                </button>
+                
+                <button class="btn btn-outline btn-large" onclick="showScreen('rules')">
+                    <span class="btn-icon">📖</span>
+                    <span>Правила игры</span>
+                </button>
+                
+                <button class="btn btn-outline btn-large" onclick="showScreen('history')">
+                    <span class="btn-icon">🏆</span>
+                    <span>История игр</span>
+                </button>
+            </div>
+
+            <!-- Декоративные элементы -->
+            <div class="decoration-dots"></div>
         </div>
     </div>
-    
-    <div class="container" id="game-container">
-        <form id="pitch-form" style="display: block;">
-            <h3>Pitch-карта проекта</h3>
 
-            <label for="name">1️⃣ НАЗВАНИЕ ПРОЕКТА:</label>
-            <input type="text" id="name" name="name" required placeholder="Например: 'Бот-помощник для студентов'">
+    <!-- Экран создания игры (для преподавателя) -->
+    <div id="create-game" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <button class="btn-back" onclick="showScreen('main-menu')">← Назад</button>
+                <h2>Создать новую игру</h2>
+            </div>
 
-            <label for="essence">2️⃣ СУТЬ ИДЕИ (что делаем):</label>
-            <textarea id="essence" name="essence" required placeholder="Максимум 3 предложения, о чем ваш бизнес."></textarea>
+            <div class="form-card">
+                <div class="form-group">
+                    <label>Количество команд</label>
+                    <div class="number-selector">
+                        <button class="btn-round" onclick="changeTeams(-1)">-</button>
+                        <span id="team-count" class="number-display">4</span>
+                        <button class="btn-round" onclick="changeTeams(1)">+</button>
+                    </div>
+                </div>
 
-            <label for="wow_factor">3️⃣ WOW-ФАКТОР (чем мы уникальны):</label>
-            <textarea id="wow_factor" name="wow_factor" required placeholder="Главная фишка, которая отличает вас от конкурентов."></textarea>
+                <div class="form-group">
+                    <label>Игроков в каждой команде</label>
+                    <div class="number-selector">
+                        <button class="btn-round" onclick="changePlayersPerTeam(-1)">-</button>
+                        <span id="players-per-team" class="number-display">5</span>
+                        <button class="btn-round" onclick="changePlayersPerTeam(1)">+</button>
+                    </div>
+                </div>
 
-            <label>4️⃣ ДЛЯ КОГО (целевая аудитория):</label>
-            <div class="radio-group">
-                <input type="radio" id="aud_students" name="audience" value="Школьники/студенты" required> <label for="aud_students">Школьники/студенты</label><br>
-                <input type="radio" id="aud_young" name="audience" value="Молодые люди 20-35 лет"> <label for="aud_young">Молодые люди 20-35 лет</label><br>
-                <input type="radio" id="aud_families" name="audience" value="Семьи с детьми"> <label for="aud_families">Семьи с детьми</label><br>
+                <div class="form-group">
+                    <label>Время на Уровень 1 (минуты)</label>
+                    <div class="number-selector">
+                        <button class="btn-round" onclick="changeTime('level1', -1)">-</button>
+                        <span id="time-level1" class="number-display">10</span>
+                        <button class="btn-round" onclick="changeTime('level1', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Время на Уровень 2 (минуты)</label>
+                    <div class="number-selector">
+                        <button class="btn-round" onclick="changeTime('level2', -1)">-</button>
+                        <span id="time-level2" class="number-display">15</span>
+                        <button class="btn-round" onclick="changeTime('level2', 1)">+</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Время на Уровень 3 (минуты)</label>
+                    <div class="number-selector">
+                        <button class="btn-round" onclick="changeTime('level3', -1)">-</button>
+                        <span id="time-level3" class="number-display">15</span>
+                        <button class="btn-round" onclick="changeTime('level3', 1)">+</button>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-large" onclick="createGame()">
+                    🚀 Создать игру
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран с кодом комнаты -->
+    <div id="game-code" class="screen">
+        <div class="container">
+            <div class="code-card">
+                <h2>Игра создана!</h2>
+                <p class="code-label">Код для входа:</p>
+                <div class="game-code-display">
+                    <span id="room-code">ABCD12</span>
+                </div>
+                <p class="code-hint">Участники могут ввести этот код для входа</p>
+                
+                <div class="waiting-status">
+                    <p style="margin: 20px 0;">Участники подключатся автоматически</p>
+                    <span id="players-count" class="players-counter">Готово к запуску</span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <button class="btn btn-primary btn-large" onclick="startGameAsTeacher()">
+                        👨‍🏫 Играть как преподаватель
+                    </button>
+                    <button class="btn btn-secondary btn-large" onclick="startGameAsSinglePlayer()">
+                        🎮 Быстрая игра (один игрок)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран входа в игру -->
+    <div id="join-game" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <button class="btn-back" onclick="showScreen('main-menu')">← Назад</button>
+                <h2>Присоединиться к игре</h2>
+            </div>
+
+            <div class="form-card">
+                <div class="form-group">
+                    <label>Код игры</label>
+                    <input type="text" id="join-code" class="input-code" placeholder="Введите код" maxlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label>Ваше имя</label>
+                    <input type="text" id="player-name" class="input-text" placeholder="Как вас зовут?">
+                </div>
+
+                <button class="btn btn-primary btn-large" onclick="joinGame()">
+                    🎮 Войти в игру
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран выбора команды -->
+    <div id="team-selection" class="screen">
+        <div class="container">
+            <h2>Выберите команду</h2>
+            <div id="teams-list" class="teams-grid">
+                <!-- Команды добавятся динамически -->
+            </div>
+            <button class="btn btn-success btn-large" onclick="showScreen('role-selection')">
+                Далее →
+            </button>
+        </div>
+    </div>
+
+    <!-- Экран выбора роли -->
+    <div id="role-selection" class="screen">
+        <div class="container">
+            <h2>Выберите роль</h2>
+            <p class="subtitle">Все роли равнозначны!</p>
+            
+            <div class="roles-grid">
+                <div class="role-card" onclick="selectRole('ceo')">
+                    <div class="role-icon">👔</div>
+                    <h3>CEO</h3>
+                    <p>Генеральный директор</p>
+                </div>
+                
+                <div class="role-card" onclick="selectRole('cmo')">
+                    <div class="role-icon">📢</div>
+                    <h3>CMO</h3>
+                    <p>Директор по маркетингу</p>
+                </div>
+                
+                <div class="role-card" onclick="selectRole('cto')">
+                    <div class="role-icon">💻</div>
+                    <h3>CTO</h3>
+                    <p>Технический директор</p>
+                </div>
+                
+                <div class="role-card" onclick="selectRole('cfo')">
+                    <div class="role-icon">💰</div>
+                    <h3>CFO</h3>
+                    <p>Финансовый директор</p>
+                </div>
+                
+                <div class="role-card" onclick="selectRole('coo')">
+                    <div class="role-icon">⚙️</div>
+                    <h3>COO</h3>
+                    <p>Операционный директор</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Лобби (ожидание) -->
+    <div id="lobby" class="screen">
+        <div class="container">
+            <div class="team-info-card">
+                <h2 id="team-name">Команда Альфа</h2>
+                <div class="team-score">
+                    <span class="score-label">Баллы:</span>
+                    <span id="team-score" class="score-value">100</span>
+                </div>
+            </div>
+
+            <div class="team-members">
+                <h3>Состав команды:</h3>
+                <div id="members-list"></div>
+            </div>
+
+            <div class="waiting-game">
+                <div class="spinner"></div>
+                <p>Ожидание начала игры...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран Уровень 1: Идея -->
+    <div id="level1" class="screen">
+        <div class="container">
+            <div class="level-header">
+                <div class="level-badge">Уровень 1</div>
+                <h2>ИДЕЯ</h2>
+                <div class="timer" id="timer1">10:00</div>
+            </div>
+
+            <div class="category-card">
+                <p class="category-label">Ваша категория бизнеса:</p>
+                <h3 id="business-category" class="category-name">Образовательные технологии</h3>
+            </div>
+
+            <div class="form-card">
+                <div class="form-group">
+                    <label>Название проекта</label>
+                    <input type="text" id="project-name" class="input-text" placeholder="Придумайте название">
+                </div>
+
+                <div class="form-group">
+                    <label>Описание идеи</label>
+                    <textarea id="project-idea" class="textarea" rows="6" placeholder="Опишите вашу бизнес-идею..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Целевая аудитория</label>
+                    <input type="text" id="target-audience" class="input-text" placeholder="Кто ваши клиенты?">
+                </div>
+
+                <div class="form-group">
+                    <label>Как будете зарабатывать?</label>
+                    <textarea id="revenue-model" class="textarea" rows="3" placeholder="Модель монетизации"></textarea>
+                </div>
+
+                <button class="btn btn-success btn-large" onclick="submitIdea()">
+                    ✅ Готовы к презентации
+                </button>
+            </div>
+
+            <!-- Чат команды -->
+            <div class="team-chat">
+                <button class="chat-toggle" onclick="toggleChat()">💬 Чат команды</button>
+                <div class="chat-window" id="chat-window" style="display: none;">
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="chat-input">
+                        <input type="text" id="chat-input" placeholder="Сообщение...">
+                        <button onclick="sendMessage()">→</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран Уровень 2: Запуск (События) -->
+    <div id="level2" class="screen">
+        <div class="container">
+            <div class="level-header">
+                <div class="level-badge level-badge-2">Уровень 2</div>
+                <h2>ЗАПУСК</h2>
+                <div class="timer" id="timer2">15:00</div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="cards-progress"></div>
+                <span class="progress-text">Карточка <span id="current-card">1</span> из 5</span>
+            </div>
+
+            <div id="event-card" class="event-card">
+                <div class="event-header">
+                    <span class="event-icon">⚠️</span>
+                    <h3 id="event-title">Событие</h3>
+                </div>
+                <p id="event-description" class="event-text">Описание события появится здесь...</p>
+                
+                <div class="choices" id="event-choices">
+                    <!-- Варианты решений добавятся динамически -->
+                </div>
+            </div>
+
+            <div class="score-indicator">
+                <span>Текущий счёт:</span>
+                <span id="current-score" class="score-value">100</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно броска монетки -->
+    <div id="coin-modal" class="modal">
+        <div class="modal-content coin-flip-modal">
+            <h2>🎲 БРОСОК МОНЕТКИ</h2>
+            <p class="coin-hint">Момент истины!</p>
+            
+            <div class="coin-container">
+                <div id="coin" class="coin">
+                    <div class="coin-side coin-heads">ОРЁЛ</div>
+                    <div class="coin-side coin-tails">РЕШКА</div>
+                </div>
             </div>
             
-            <label for="monetization">5️⃣ КАК ЗАРАБАТЫВАЕМ:</label>
-            <textarea id="monetization" name="monetization" required placeholder="Модель монетизации: подписка, реклама, продажа, комиссия."></textarea>
-
-            </form>
-
-        <div id="level2-view" style="display: none;">
-            <h3>Уровень 2: Запуск</h3>
-            <p>Ждем начала второго уровня...</p>
+            <div id="coin-result" class="coin-result"></div>
+            <button class="btn btn-primary" onclick="closeCoinModal()">Продолжить</button>
         </div>
-
     </div>
 
-    <script src="script.js"></script>
+    <!-- Экран Уровень 3: Босс-файт -->
+    <div id="level3" class="screen">
+        <div class="container">
+            <div class="level-header">
+                <div class="level-badge level-badge-3">Уровень 3</div>
+                <h2>БОСС-ФАЙТ</h2>
+                <div class="timer" id="timer3">15:00</div>
+            </div>
+
+            <div class="boss-card">
+                <div class="boss-header">
+                    <span class="boss-icon">⚡</span>
+                    <h3>ИДЕАЛЬНЫЙ ШТОРМ</h3>
+                </div>
+                <p class="boss-subtitle">На ваш бизнес обрушилось 5 кризисов одновременно!</p>
+                
+                <div id="crisis-list" class="crisis-list">
+                    <!-- Кризисы добавятся динамически -->
+                </div>
+            </div>
+
+            <div class="form-card">
+                <h3>Антикризисный план</h3>
+                
+                <div class="form-group">
+                    <label>1. Приоритеты (что решаем первым?)</label>
+                    <textarea id="priorities" class="textarea" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>2. Конкретные действия</label>
+                    <textarea id="actions" class="textarea" rows="4"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>3. Распределение ролей</label>
+                    <textarea id="roles-distribution" class="textarea" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>4. Сроки реализации</label>
+                    <textarea id="timeline" class="textarea" rows="2"></textarea>
+                </div>
+
+                <button class="btn btn-success btn-large" onclick="submitCrisisPlan()">
+                    🚀 Отправить план
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран результатов -->
+    <div id="results" class="screen">
+        <div class="container">
+            <div class="results-header">
+                <h2>🏆 РЕЗУЛЬТАТЫ ИГРЫ</h2>
+            </div>
+
+            <div id="leaderboard" class="leaderboard">
+                <!-- Таблица результатов добавится динамически -->
+            </div>
+
+            <div class="buttons-group">
+                <button class="btn btn-primary" onclick="shareResults()">
+                    📤 Поделиться
+                </button>
+                <button class="btn btn-outline" onclick="showScreen('main-menu')">
+                    🏠 В главное меню
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
