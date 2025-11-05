@@ -425,5 +425,51 @@
         </div>
     </div>
 
+    <!-- Панель преподавателя -->
+    <div id="teacher-panel" class="screen">
+        <div class="container">
+            <div class="screen-header">
+                <h2>🎮 Панель преподавателя</h2>
+            </div>
+
+            <div class="form-card">
+                <h3>Код игры: <span id="teacher-game-code" style="color: var(--accent);">ABC123</span></h3>
+                <p style="opacity: 0.8; margin-top: 8px;">Участники могут присоединиться по этому коду</p>
+            </div>
+
+            <div class="form-card">
+                <h3>📊 Команды и участники</h3>
+                <div id="teacher-teams-list" style="margin-top: 20px;">
+                    <!-- Команды появятся здесь -->
+                </div>
+            </div>
+
+            <div class="form-card">
+                <h3>🎯 Управление игрой</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                    <button class="btn btn-success btn-large" onclick="teacherStartLevel(1)">
+                        ▶️ Начать Уровень 1
+                    </button>
+                    <button class="btn btn-primary btn-large" onclick="teacherStartLevel(2)">
+                        ▶️ Начать Уровень 2
+                    </button>
+                    <button class="btn btn-secondary btn-large" onclick="teacherStartLevel(3)">
+                        ▶️ Начать Уровень 3
+                    </button>
+                    <button class="btn btn-outline btn-large" onclick="teacherShowResults()">
+                        🏆 Показать результаты
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <h3>💰 Счёт команд</h3>
+                <div id="teacher-scores" style="margin-top: 20px;">
+                    <!-- Счёт появится здесь -->
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
