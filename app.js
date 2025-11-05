@@ -2,7 +2,11 @@
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================
 
-import { config } from './config.js';
+// Конфигурация backend
+const config = {
+    API_URL: 'https://manager-battle-backend-production.up.railway.app',
+    WS_URL: 'https://manager-battle-backend-production.up.railway.app'
+};
 
 let tg = window.Telegram.WebApp;
 tg.expand();
