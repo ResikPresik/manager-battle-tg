@@ -1,10 +1,144 @@
 // ============================================
-// ИНИЦИАЛИЗАЦИЯ TELEGRAM WEB APP
+// ИНИЦИАЛИЗАЦИЯ
 // ============================================
+
+import { config } from './config.js';
 
 let tg = window.Telegram.WebApp;
 tg.expand();
 tg.ready();
+
+// Инициализация Socket.IO
+let socket = null;
+
+function initSocket() {
+    if (!socket) {
+        socket = io(config.WS_URL, {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5
+        });
+        
+        socket.on('connect', () => {
+            console.log('✅ Подключено к серверу');
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('❌ Отключено от сервера');
+        });
+        
+        socket.on('error', (error) => {
+            console.error('❌ Ошибка Socket.IO:', error);
+        });
+        
+        // Обработчики событий
+        socket.on('game-joined', handleGameJoined);
+        socket.on('player-joined', handlePlayerJoined);
+        socket.on('new-message', handleNewMessage);
+        socket.on('score-updated', handleScoreUpdated);
+        socket.on('game-started', handleGameStarted);
+        socket.on('level-changed', handleLevelChanged);
+    }
+    return socket;
+}
+
+// Обработчики событий от сервера
+function handleGameJoined(data) {
+    console.log('Присоединились к игре:', data);
+    // Обновляем состояние
+    if (data.teams) {
+        state.teams = data.teams;
+    }
+}
+
+function handlePlayerJoined(data) {
+    console.log('Новый игрок:', data);
+    // Показываем уведомление
+    showNotification(`${data.name} присоединился к игре`);
+}
+
+function handleNewMessage(data) {
+    console.log('Новое сообщение:', data);
+    addMessageToChat(data);
+}
+
+function handleScoreUpdated(data) {
+    console.log('Обновлён счёт:', data);
+    updateTeamScore(data.teamId, data.score);
+}
+
+function handleGameStarted(data) {
+    console.log('Игра началась, уровень:', data.level);
+    startLevel1();
+}
+
+function handleLevelChanged(data) {
+    console.log('Смена уровня:', data.level);
+    if (data.level === 2) {
+        startLevel2();
+    } else if (data.level === 3) {
+        startLevel3();
+    }
+}
+
+// Вспомогательные функции
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--primary);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: var(--shadow-lg);
+        z-index: 1000;
+        animation: slideInRight 0.3s ease;
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+function addMessageToChat(data) {
+    const messagesContainer = document.getElementById('chat-messages');
+    if (!messagesContainer) return;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'chat-message';
+    if (data.playerName === state.playerName) {
+        messageDiv.classList.add('own');
+    }
+    messageDiv.innerHTML = `
+        <div class="message-author">${data.playerName}</div>
+        <div class="message-text">${data.message}</div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function updateTeamScore(teamId, score) {
+    const team = state.teams.find(t => t.id === teamId);
+    if (team) {
+        team.score = score;
+    }
+    
+    // Обновляем отображение если это наша команда
+    if (teamId === state.teamId) {
+        state.score = score;
+        const scoreElements = document.querySelectorAll('#team-score, #current-score');
+        scoreElements.forEach(el => {
+            if (el) el.textContent = score;
+        });
+    }
+}
 
 // Состояние приложения
 const state = {
@@ -113,18 +247,36 @@ function changeTime(level, delta) {
 function createGame() {
     state.isTeacher = true;
     
-    // Генерируем случайный код комнаты
-    state.gameCode = generateGameCode();
-    
-    // Показываем экран с кодом
-    document.getElementById('room-code').textContent = state.gameCode;
-    showScreen('game-code');
-    
-    // Создаем команды сразу
-    generateTeams();
-    
-    // Отправляем данные на сервер (будет реализовано позже)
-    console.log('Создана игра:', state.gameCode, gameSettings);
+    // Отправляем запрос на сервер для создания игры
+    fetch(`${config.API_URL}/api/game/create`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ settings: gameSettings })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            state.gameCode = data.code;
+            state.gameId = data.gameId;
+            
+            // Показываем экран с кодом
+            document.getElementById('room-code').textContent = state.gameCode;
+            showScreen('game-code');
+            
+            // Инициализируем Socket.IO
+            initSocket();
+            
+            console.log('Создана игра:', state.gameCode, gameSettings);
+        } else {
+            alert('Ошибка создания игры: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('Не удалось подключиться к серверу');
+    });
 }
 
 function generateGameCode() {
@@ -136,27 +288,68 @@ function generateGameCode() {
     return code;
 }
 
-// Режим: преподаватель управляет игрой
+// Режим: преподаватель управляет игрой  
 function startGameAsTeacher() {
-    alert('Режим преподавателя будет доступен в следующей версии!\n\nПока используйте "Быстрая игра" для тестирования.');
+    // Запрашиваем данные игры с сервера
+    fetch(`${config.API_URL}/api/game/${state.gameCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                state.teams = data.game.teams;
+                
+                // Начинаем игру на сервере
+                return fetch(`${config.API_URL}/api/game/${state.gameCode}/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Игра начата преподавателем');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Пока используйте "Быстрая игра" для тестирования');
+        });
 }
 
 // Режим: быстрая игра для одного игрока (тестирование)
 function startGameAsSinglePlayer() {
-    // Создаём игрока автоматически
-    state.playerName = 'Игрок 1';
-    state.teamId = 1;
-    state.teamName = state.teams[0].name;
-    state.role = 'ceo';
-    
-    // Добавляем игрока в команду
-    state.teams[0].members.push({
-        name: state.playerName,
-        role: state.role
-    });
-    
-    // Сразу начинаем Уровень 1
-    startLevel1();
+    // Запрашиваем данные игры
+    fetch(`${config.API_URL}/api/game/${state.gameCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                state.teams = data.game.teams;
+                
+                // Создаём игрока автоматически
+                state.playerName = 'Игрок 1';
+                state.teamId = state.teams[0].id;
+                state.teamName = state.teams[0].name;
+                state.role = 'ceo';
+                
+                // Инициализируем Socket.IO и присоединяемся к игре
+                const s = initSocket();
+                s.emit('join-game', {
+                    code: state.gameCode,
+                    playerName: state.playerName,
+                    teamId: state.teamId,
+                    role: state.role
+                });
+                
+                // Сразу начинаем Уровень 1
+                setTimeout(() => {
+                    startLevel1();
+                }, 500);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Не удалось загрузить данные игры');
+        });
 }
 
 function generateTeams() {
@@ -717,20 +910,16 @@ function sendMessage() {
     
     if (!message) return;
     
-    const messagesContainer = document.getElementById('chat-messages');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'chat-message own';
-    messageDiv.innerHTML = `
-        <div class="message-author">${state.playerName}</div>
-        <div class="message-text">${message}</div>
-    `;
-    
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // Отправляем через WebSocket
+    if (socket && socket.connected) {
+        socket.emit('send-message', {
+            teamId: state.teamId,
+            playerName: state.playerName,
+            message: message
+        });
+    }
     
     input.value = '';
-    
-    // В реальном приложении отправляем на сервер
 }
 
 // ============================================
