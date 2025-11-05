@@ -70,16 +70,41 @@ function handleScoreUpdated(data) {
 
 function handleGameStarted(data) {
     console.log('Игра началась, уровень:', data.level);
-    startLevel1();
+    
+    // Очищаем интервал лобби
+    if (state.lobbyInterval) {
+        clearInterval(state.lobbyInterval);
+    }
+    
+    // Показываем уведомление
+    showNotification('Игра началась! Начинается Уровень 1');
+    
+    // Переходим к нужному уровню
+    setTimeout(() => {
+        if (data.level === 1) {
+            startLevel1();
+        } else if (data.level === 2) {
+            startLevel2();
+        } else if (data.level === 3) {
+            startLevel3();
+        }
+    }, 1000);
 }
 
 function handleLevelChanged(data) {
     console.log('Смена уровня:', data.level);
-    if (data.level === 2) {
-        startLevel2();
-    } else if (data.level === 3) {
-        startLevel3();
-    }
+    
+    // Показываем уведомление
+    showNotification(`Начинается Уровень ${data.level}!`);
+    
+    // Переходим к уровню
+    setTimeout(() => {
+        if (data.level === 2) {
+            startLevel2();
+        } else if (data.level === 3) {
+            startLevel3();
+        }
+    }, 1000);
 }
 
 // Вспомогательные функции
@@ -156,7 +181,8 @@ const state = {
     currentCard: 0,
     eventCards: [],
     timer: null,
-    teacherInterval: null
+    teacherInterval: null,
+    lobbyInterval: null
 };
 
 // ============================================
@@ -397,21 +423,39 @@ function updateTeacherPanel() {
 }
 
 function teacherStartLevel(level) {
-    // Отправляем всем игрокам команду начать уровень
-    fetch(`${config.API_URL}/api/game/${state.gameCode}/next-level`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`Уровень ${level} начат! Все участники получили уведомление.`);
-        }
-    })
-    .catch(error => {
-        console.error('Ошибка:', error);
-        alert('Не удалось начать уровень');
-    });
+    if (level === 1) {
+        // Начинаем игру
+        fetch(`${config.API_URL}/api/game/${state.gameCode}/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Уровень ${level} начат! Все участники получили уведомление.`);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Не удалось начать уровень');
+        });
+    } else {
+        // Переход на следующий уровень
+        fetch(`${config.API_URL}/api/game/${state.gameCode}/next-level`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Уровень ${level} начат! Все участники получили уведомление.`);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Не удалось начать уровень');
+        });
+    }
 }
 
 function teacherShowResults() {
@@ -493,11 +537,23 @@ function joinGame() {
     state.gameCode = code;
     state.playerName = name;
     
-    // В реальном приложении здесь будет запрос на сервер
-    console.log('Подключение к игре:', code, name);
-    
-    // Показываем выбор команды
-    showTeamSelection();
+    // Проверяем что игра существует
+    fetch(`${config.API_URL}/api/game/${code}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                state.teams = data.game.teams;
+                
+                // Показываем выбор команды
+                showTeamSelection();
+            } else {
+                alert('Игра с таким кодом не найдена!');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Не удалось подключиться к серверу');
+        });
 }
 
 function showTeamSelection() {
@@ -547,44 +603,83 @@ function selectRole(role) {
     });
     event.target.closest('.role-card').classList.add('selected');
     
-    // Добавляем игрока в команду
-    const team = state.teams.find(t => t.id === state.teamId);
-    team.members.push({
-        name: state.playerName,
-        role: role
+    // Инициализируем Socket.IO и присоединяемся к игре
+    const s = initSocket();
+    
+    // Отправляем данные на сервер
+    s.emit('join-game', {
+        code: state.gameCode,
+        playerName: state.playerName,
+        teamId: state.teamId,
+        role: state.role
     });
     
-    // Переходим в лобби
-    setTimeout(() => {
-        showLobby();
-    }, 500);
+    // Ждём подтверждения от сервера
+    s.once('game-joined', (data) => {
+        console.log('Успешно присоединились к игре!', data);
+        
+        // Обновляем данные игры
+        if (data.teams) {
+            state.teams = data.teams;
+        }
+        
+        // Переходим в лобби
+        setTimeout(() => {
+            showLobby();
+        }, 500);
+    });
 }
 
 function showLobby() {
+    const team = state.teams.find(t => t.id === state.teamId);
+    
     document.getElementById('team-name').textContent = state.teamName;
-    document.getElementById('team-score').textContent = state.score;
+    document.getElementById('team-score').textContent = team ? team.score : 100;
     
     // Отображаем участников команды
-    const membersList = document.getElementById('members-list');
-    membersList.innerHTML = '';
-    
-    const team = state.teams.find(t => t.id === state.teamId);
-    team.members.forEach(member => {
-        const memberDiv = document.createElement('div');
-        memberDiv.className = 'member-item';
-        memberDiv.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-card); border-radius: 12px; margin-bottom: 8px;">
-                <span style="font-size: 24px;">${getRoleIcon(member.role)}</span>
-                <div>
-                    <div style="font-weight: 600;">${member.name}</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">${getRoleName(member.role)}</div>
-                </div>
-            </div>
-        `;
-        membersList.appendChild(memberDiv);
-    });
+    updateLobbyMembers();
     
     showScreen('lobby');
+    
+    // Обновляем список участников каждые 2 секунды
+    if (state.lobbyInterval) {
+        clearInterval(state.lobbyInterval);
+    }
+    state.lobbyInterval = setInterval(() => {
+        updateLobbyMembers();
+    }, 2000);
+}
+
+function updateLobbyMembers() {
+    // Запрашиваем свежие данные с сервера
+    fetch(`${config.API_URL}/api/game/${state.gameCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const players = data.game.players || [];
+                const teamPlayers = players.filter(p => p.team_id === state.teamId);
+                
+                const membersList = document.getElementById('members-list');
+                membersList.innerHTML = '';
+                
+                teamPlayers.forEach(member => {
+                    const memberDiv = document.createElement('div');
+                    memberDiv.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-card); border-radius: 12px; margin-bottom: 8px;">
+                            <span style="font-size: 24px;">${getRoleIcon(member.role)}</span>
+                            <div>
+                                <div style="font-weight: 600;">${member.name}</div>
+                                <div style="font-size: 12px; color: var(--text-secondary);">${getRoleName(member.role)}</div>
+                            </div>
+                        </div>
+                    `;
+                    membersList.appendChild(memberDiv);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка обновления лобби:', error);
+        });
 }
 
 function getRoleIcon(role) {
@@ -1141,4 +1236,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.shareResults = shareResults;
     window.teacherStartLevel = teacherStartLevel;
     window.teacherShowResults = teacherShowResults;
+    window.updateLobbyMembers = updateLobbyMembers;
 });
