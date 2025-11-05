@@ -288,6 +288,8 @@ body {
     padding: 28px;
     margin-bottom: 24px;
     box-shadow: var(--shadow-md);
+    position: relative;
+    z-index: 1;
 }
 
 .screen-header {
@@ -326,12 +328,20 @@ body {
     font-size: 16px;
     transition: var(--transition);
     font-family: inherit;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .input-text:focus, .input-code:focus, .textarea:focus {
     outline: none;
     border-color: var(--primary);
     background: var(--bg-primary);
+    z-index: 11;
 }
 
 .input-code {
@@ -345,6 +355,8 @@ body {
 .textarea {
     resize: vertical;
     min-height: 100px;
+    cursor: text;
+    touch-action: auto;
 }
 
 /* Селектор чисел */
@@ -880,6 +892,7 @@ body {
     bottom: 20px;
     right: 20px;
     z-index: 200;
+    pointer-events: none;
 }
 
 .chat-toggle {
@@ -893,6 +906,7 @@ body {
     cursor: pointer;
     box-shadow: var(--shadow-lg);
     transition: var(--transition);
+    pointer-events: auto;
 }
 
 .chat-toggle:hover {
@@ -912,6 +926,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    pointer-events: auto;
 }
 
 .chat-messages {
