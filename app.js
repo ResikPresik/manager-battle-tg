@@ -541,10 +541,18 @@ function joinGame() {
     state.gameCode = code;
     state.playerName = name;
     
+    console.log('🔄 Подключение к игре:', code);
+    const url = `${config.API_URL}/api/game/${code}`;
+    console.log('📡 URL:', url);
+    
     // Проверяем что игра существует
-    fetch(`${config.API_URL}/api/game/${code}`)
-        .then(response => response.json())
+    fetch(url)
+        .then(response => {
+            console.log('📥 Response status:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('📦 Response data:', data);
             if (data.success) {
                 state.teams = data.game.teams;
                 
@@ -555,8 +563,8 @@ function joinGame() {
             }
         })
         .catch(error => {
-            console.error('Ошибка:', error);
-            alert('Не удалось подключиться к серверу');
+            console.error('❌ Ошибка подключения:', error);
+            alert('Не удалось подключиться к серверу. Проверьте код и попробуйте снова.');
         });
 }
 
